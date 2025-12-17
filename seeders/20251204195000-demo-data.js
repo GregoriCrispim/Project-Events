@@ -1,5 +1,17 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
+    // Verifica se já existem dados antes de inserir
+    const [eventos] = await queryInterface.sequelize.query(
+      'SELECT COUNT(*) as count FROM "Eventos"'
+    );
+    
+    if (parseInt(eventos[0].count) > 0) {
+      console.log('Seed: Dados já existem, pulando inserção...');
+      return;
+    }
+
+    console.log('Seed: Inserindo dados de demonstração...');
+
     await queryInterface.bulkInsert('Eventos', [
       {
         nome: 'Congresso de Tecnologia',
@@ -79,6 +91,8 @@ module.exports = {
         updatedAt: new Date()
       }
     ], {});
+
+    console.log('Seed: Dados inseridos com sucesso!');
   },
 
   down: async (queryInterface, Sequelize) => {
