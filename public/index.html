@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Tester • Gestão de Eventos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-dark: #0a0e17;
+      --bg-card: rgba(255,255,255,0.03);
+      --bg-card-hover: rgba(255,255,255,0.07);
+      --border-color: rgba(255,255,255,0.08);
+      --accent: #6366f1;
+      --accent-glow: rgba(99,102,241,0.4);
+      --get: #10b981;
+      --post: #3b82f6;
+      --put: #f59e0b;
+      --delete: #ef4444;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --font-sans: 'Outfit', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(16,185,129,0.1), transparent);
+    }
+
+    .mono { font-family: var(--font-mono); font-size: 0.85em; }
+
+    /* Header */
+    .app-header {
+      padding: 2rem 0;
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(10,14,23,0.8);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .app-header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .app-header h1 i {
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+    .app-header p {
+      margin: 0.25rem 0 0;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* Token badge */
+    .token-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 2rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .token-badge:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent);
+    }
+    .token-badge.has-token {
+      border-color: var(--get);
+      color: var(--get);
+    }
+    .token-badge.has-token i { color: var(--get); }
+
+    /* Section */
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 2.5rem 0 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .section-title h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section-title .count {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+    }
+
+    /* Cards grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1rem;
+    }
+
+    .route-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 1rem;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .route-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--method-color);
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .route-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--method-color);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .route-card:hover::before { opacity: 1; }
+
+    .route-card .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .route-card .title {
+      font-weight: 600;
+      font-size: 1rem;
+      margin: 0;
+    }
+    .route-card .method-badge {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.3rem 0.6rem;
+      border-radius: 0.375rem;
+      background: var(--method-color);
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .route-card .path {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      word-break: break-all;
+    }
+    .route-card .desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 0;
+      line-height: 1.4;
+    }
+    .route-card .jwt-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.7rem;
+      color: var(--accent);
+      margin-top: 0.5rem;
+    }
+
+    /* Modal */
+    .modal-backdrop.show { background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+    .modal-content {
+      background: linear-gradient(180deg, #1e2433 0%, #151a25 100%);
+      border: 1px solid var(--border-color);
+      border-radius: 1.25rem;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+    }
+    .modal-header {
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.25rem 1.5rem;
+    }
+    .modal-header .modal-title {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .modal-header .btn-close {
+      filter: invert(1);
+      opacity: 0.5;
+    }
+    .modal-header .btn-close:hover { opacity: 1; }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer {
+      border-top: 1px solid var(--border-color);
+      padding: 1rem 1.5rem;
+    }
+
+    /* Form */
+    .form-label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+    .form-control, .form-select {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border-color);
+      color: var(--text);
+      border-radius: 0.625rem;
+      padding: 0.65rem 1rem;
+      font-size: 0.9rem;
+    }
+    .form-control:focus, .form-select:focus {
+      background: rgba(0,0,0,0.4);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+      color: var(--text);
+    }
+    .form-control::placeholder { color: var(--text-muted); opacity: 0.5; }
+    textarea.form-control { font-family: var(--font-mono); font-size: 0.85rem; }
+
+    /* Buttons */
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 0.65rem 1.5rem;
+      font-weight: 500;
+      border-radius: 0.625rem;
+      transition: all 0.2s;
+    }
+    .btn-accent:hover {
+      background: #818cf8;
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      padding: 0.65rem 1.25rem;
+      border-radius: 0.625rem;
+      transition: all 0.2s;
+    }
+    .btn-ghost:hover {
+      background: var(--bg-card);
+      color: var(--text);
+      border-color: var(--text-muted);
+    }
+
+    /* Response */
+    .response-box {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      max-height: 400px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .response-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .response-meta .status {
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .response-meta .status.success { background: rgba(16,185,129,0.2); color: var(--get); }
+    .response-meta .status.error { background: rgba(239,68,68,0.2); color: var(--delete); }
+    .response-meta .time { color: var(--text-muted); font-size: 0.85rem; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeIn 0.3s ease forwards; }
+
+    /* Token modal */
+    .token-input-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .token-input-group input { flex: 1; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // Endpoints catalog
+    const ENDPOINTS = [
+      // Auth
+      {
+        key: 'auth-login',
+        group: 'Auth',
+        title: 'Login (JWT)',
+        description: 'Gera um token JWT usando apenas o email.',
+        api: { method: 'POST', path: '/auth/login', auth: false },
+        fields: [{ name: 'email', label: 'Email', type: 'email', required: true, where: 'body', placeholder: 'voce@exemplo.com' }],
+        storeToken: true,
+      },
+      // Eventos
+      { key: 'eventos-listar', group: 'Eventos', title: 'Listar eventos', api: { method: 'GET', path: '/eventos', auth: false }, fields: [] },
+      {
+        key: 'eventos-detalhar',
+        group: 'Eventos',
+        title: 'Detalhar evento',
+        api: { method: 'GET', path: '/eventos/:id', auth: false },
+        fields: [{ name: 'id', label: 'ID do evento', type: 'number', required: true, where: 'path', placeholder: '1' }],
+      },
+      {
+        key: 'eventos-criar',
+        group: 'Eventos',
+        title: 'Criar evento',
+        api: { method: 'POST', path: '/eventos', auth: true },
+        fields: [
+          { name: 'nome', label: 'Nome', type: 'text', required: true, where: 'body' },
+          { name: 'descricao', label: 'Descrição', type: 'textarea', where: 'body' },
+          { name: 'data_inicio', label: 'Data início', type: 'datetime-local', where: 'body' },
+          { name: 'data_fim', label: 'Data fim', type: 'datetime-local', where: 'body' },
+          { name: 'local', label: 'Local', type: 'text', where: 'body' },
+        ],
+      },
+      {
+        key: 'eventos-atualizar',
+        group: 'Eventos',
+        title: 'Atualizar evento',
+        api: { method: 'PUT', path: '/eventos/:id', auth: true },
+        fields: [
+          { name: 'id', label: 'ID do evento', type: 'number', required: true, where: 'path', placeholder: '1' },
+          { name: 'nome', label: 'Nome', type: 'text', where: 'body' },
+          { name: 'descricao', label: 'Descrição', type: 'textarea', where: 'body' },
+          { name: 'data_inicio', label: 'Data início', type: 'datetime-local', where: 'body' },
+          { name: 'data_fim', label: 'Data fim', type: 'datetime-local', where: 'body' },
+          { name: 'local', label: 'Local', type: 'text', where: 'body' },
+        ],
+      },
+      {
+        key: 'eventos-remover',
+        group: 'Eventos',
+        title: 'Remover evento',
+        api: { method: 'DELETE', path: '/eventos/:id', auth: true },
+        fields: [{ name: 'id', label: 'ID do evento', type: 'number', required: true, where: 'path', placeholder: '1' }],
+      },
+      {
+        key: 'eventos-atividades',
+        group: 'Eventos',
+        title: 'Listar atividades do evento',
+        api: { method: 'GET', path: '/eventos/:id/atividades', auth: false },
+        fields: [{ name: 'id', label: 'ID do evento', type: 'number', required: true, where: 'path', placeholder: '1' }],
+      },
+      {
+        key: 'eventos-atividades-criar',
+        group: 'Eventos',
+        title: 'Criar atividade no evento',
+        api: { method: 'POST', path: '/eventos/:id/atividades', auth: true },
+        fields: [
+          { name: 'id', label: 'ID do evento', type: 'number', required: true, where: 'path', placeholder: '1' },
+          { name: 'titulo', label: 'Título', type: 'text', required: true, where: 'body' },
+          { name: 'descricao', label: 'Descrição', type: 'textarea', where: 'body' },
+          { name: 'horario_inicio', label: 'Horário início', type: 'datetime-local', where: 'body' },
+          { name: 'horario_fim', label: 'Horário fim', type: 'datetime-local', where: 'body' },
+          { name: 'tipo', label: 'Tipo', type: 'text', where: 'body', placeholder: 'workshop/palestra' },
+        ],
+      },
+      {
+        key: 'eventos-participantes',
+        group: 'Eventos',
+        title: 'Listar participantes do evento',
+        api: { method: 'GET', path: '/eventos/:id/participantes', auth: false },
+        fields: [{ name: 'id', label: 'ID do evento', type: 'number', required: true, where: 'path', placeholder: '1' }],
+      },
+      {
+        key: 'eventos-inscrever',
+        group: 'Eventos',
+        title: 'Inscrever participante',
+        api: { method: 'POST', path: '/eventos/:id/participantes', auth: true },
+        fields: [
+          { name: 'id', label: 'ID do evento', type: 'number', required: true, where: 'path', placeholder: '1' },
+          { name: 'participanteId', label: 'ID do participante', type: 'number', required: true, where: 'body', placeholder: '1' },
+        ],
+      },
+      {
+        key: 'eventos-dashboard',
+        group: 'Eventos',
+        title: 'Dashboard do evento',
+        api: { method: 'GET', path: '/eventos/:id/dashboard', auth: false },
+        fields: [{ name: 'id', label: 'ID do evento', type: 'number', required: true, where: 'path', placeholder: '1' }],
+      },
+      // Participantes
+      { key: 'participantes-listar', group: 'Participantes', title: 'Listar participantes', api: { method: 'GET', path: '/participantes', auth: false }, fields: [] },
+      {
+        key: 'participantes-detalhar',
+        group: 'Participantes',
+        title: 'Detalhar participante',
+        api: { method: 'GET', path: '/participantes/:id', auth: false },
+        fields: [{ name: 'id', label: 'ID', type: 'number', required: true, where: 'path', placeholder: '1' }],
+      },
+      {
+        key: 'participantes-criar',
+        group: 'Participantes',
+        title: 'Criar participante',
+        api: { method: 'POST', path: '/participantes', auth: false },
+        fields: [
+          { name: 'nome', label: 'Nome', type: 'text', required: true, where: 'body' },
+          { name: 'email', label: 'Email', type: 'email', required: true, where: 'body' },
+          { name: 'celular', label: 'Celular', type: 'text', where: 'body', placeholder: '61999999999' },
+          { name: 'tipo', label: 'Tipo', type: 'text', where: 'body', placeholder: 'visitante/palestrante' },
+        ],
+      },
+      {
+        key: 'participantes-atualizar',
+        group: 'Participantes',
+        title: 'Atualizar participante',
+        api: { method: 'PUT', path: '/participantes/:id', auth: false },
+        fields: [
+          { name: 'id', label: 'ID', type: 'number', required: true, where: 'path', placeholder: '1' },
+          { name: 'nome', label: 'Nome', type: 'text', where: 'body' },
+          { name: 'email', label: 'Email', type: 'email', where: 'body' },
+          { name: 'celular', label: 'Celular', type: 'text', where: 'body' },
+          { name: 'tipo', label: 'Tipo', type: 'text', where: 'body' },
+        ],
+      },
+      {
+        key: 'participantes-remover',
+        group: 'Participantes',
+        title: 'Remover participante',
+        api: { method: 'DELETE', path: '/participantes/:id', auth: false },
+        fields: [{ name: 'id', label: 'ID', type: 'number', required: true, where: 'path', placeholder: '1' }],
+      },
+      // Atividades
+      { key: 'atividades-listar', group: 'Atividades', title: 'Listar atividades', api: { method: 'GET', path: '/atividades', auth: false }, fields: [] },
+      {
+        key: 'atividades-detalhar',
+        group: 'Atividades',
+        title: 'Detalhar atividade',
+        api: { method: 'GET', path: '/atividades/:id', auth: false },
+        fields: [{ name: 'id', label: 'ID', type: 'number', required: true, where: 'path', placeholder: '1' }],
+      },
+      {
+        key: 'atividades-criar',
+        group: 'Atividades',
+        title: 'Criar atividade',
+        api: { method: 'POST', path: '/atividades', auth: true },
+        fields: [
+          { name: 'titulo', label: 'Título', type: 'text', required: true, where: 'body' },
+          { name: 'descricao', label: 'Descrição', type: 'textarea', where: 'body' },
+          { name: 'horario_inicio', label: 'Horário início', type: 'datetime-local', where: 'body' },
+          { name: 'horario_fim', label: 'Horário fim', type: 'datetime-local', where: 'body' },
+          { name: 'tipo', label: 'Tipo', type: 'text', where: 'body' },
+          { name: 'EventoId', label: 'Evento ID', type: 'number', where: 'body', placeholder: '1' },
+          { name: 'ResponsavelId', label: 'Responsável ID', type: 'number', where: 'body', placeholder: '1' },
+        ],
+      },
+      {
+        key: 'atividades-atualizar',
+        group: 'Atividades',
+        title: 'Atualizar atividade',
+        api: { method: 'PUT', path: '/atividades/:id', auth: true },
+        fields: [
+          { name: 'id', label: 'ID', type: 'number', required: true, where: 'path', placeholder: '1' },
+          { name: 'titulo', label: 'Título', type: 'text', where: 'body' },
+          { name: 'descricao', label: 'Descrição', type: 'textarea', where: 'body' },
+          { name: 'horario_inicio', label: 'Horário início', type: 'datetime-local', where: 'body' },
+          { name: 'horario_fim', label: 'Horário fim', type: 'datetime-local', where: 'body' },
+          { name: 'tipo', label: 'Tipo', type: 'text', where: 'body' },
+        ],
+      },
+      {
+        key: 'atividades-remover',
+        group: 'Atividades',
+        title: 'Remover atividade',
+        api: { method: 'DELETE', path: '/atividades/:id', auth: true },
+        fields: [{ name: 'id', label: 'ID', type: 'number', required: true, where: 'path', placeholder: '1' }],
+      },
+      {
+        key: 'atividades-responsavel',
+        group: 'Atividades',
+        title: 'Ver responsável',
+        api: { method: 'GET', path: '/atividades/:id/responsavel', auth: false },
+        fields: [{ name: 'id', label: 'ID da atividade', type: 'number', required: true, where: 'path', placeholder: '1' }],
+      },
+      {
+        key: 'atividades-responsavel-definir',
+        group: 'Atividades',
+        title: 'Definir responsável',
+        api: { method: 'PUT', path: '/atividades/:id/responsavel', auth: true },
+        fields: [
+          { name: 'id', label: 'ID da atividade', type: 'number', required: true, where: 'path', placeholder: '1' },
+          { name: 'responsavelId', label: 'ID do responsável', type: 'number', required: true, where: 'body', placeholder: '1' },
+        ],
+      },
+    ];
+
+    const methodColors = {
+      GET: 'var(--get)',
+      POST: 'var(--post)',
+      PUT: 'var(--put)',
+      DELETE: 'var(--delete)',
+    };
+
+    const groupIcons = {
+      Auth: 'bi-shield-lock',
+      Eventos: 'bi-calendar-event',
+      Participantes: 'bi-people',
+      Atividades: 'bi-list-check',
+    };
+
+    function groupEndpoints(endpoints) {
+      const groups = {};
+      for (const ep of endpoints) {
+        if (!groups[ep.group]) groups[ep.group] = [];
+        groups[ep.group].push(ep);
+      }
+      return Object.entries(groups).map(([name, items]) => ({ name, items }));
+    }
+
+    function App() {
+      const [token, setToken] = useState(() => localStorage.getItem('jwt_token') || '');
+      const [selectedEndpoint, setSelectedEndpoint] = useState(null);
+      const [formData, setFormData] = useState({});
+      const [loading, setLoading] = useState(false);
+      const [response, setResponse] = useState(null);
+      const [showTokenModal, setShowTokenModal] = useState(false);
+      const [tempToken, setTempToken] = useState('');
+
+      const groups = groupEndpoints(ENDPOINTS);
+
+      useEffect(() => {
+        localStorage.setItem('jwt_token', token);
+      }, [token]);
+
+      useEffect(() => {
+        if (selectedEndpoint) {
+          const initial = {};
+          selectedEndpoint.fields.forEach(f => { initial[f.name] = ''; });
+          setFormData(initial);
+          setResponse(null);
+        }
+      }, [selectedEndpoint]);
+
+      const openTokenModal = () => {
+        setTempToken(token);
+        setShowTokenModal(true);
+      };
+
+      const saveToken = () => {
+        setToken(tempToken);
+        setShowTokenModal(false);
+      };
+
+      const handleCardClick = (ep) => {
+        setSelectedEndpoint(ep);
+      };
+
+      const handleInputChange = (name, value) => {
+        setFormData(prev => ({ ...prev, [name]: value }));
+      };
+
+      const handleSubmit = async () => {
+        if (!selectedEndpoint) return;
+        setLoading(true);
+        setResponse(null);
+
+        const { api, fields, storeToken } = selectedEndpoint;
+        let path = api.path;
+        const body = {};
+
+        // Build path params and body
+        for (const f of fields) {
+          const val = formData[f.name];
+          if (f.where === 'path' && val) {
+            path = path.replace(`:${f.name}`, encodeURIComponent(val));
+          } else if (f.where === 'body' && val !== '' && val !== undefined) {
+            body[f.name] = f.type === 'number' ? Number(val) : val;
+          }
+        }
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (api.auth && token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const options = { method: api.method, headers };
+        if (['POST', 'PUT', 'PATCH'].includes(api.method) && Object.keys(body).length > 0) {
+          options.body = JSON.stringify(body);
+        }
+
+        const start = performance.now();
+        try {
+          const res = await fetch(path, options);
+          const elapsed = Math.round(performance.now() - start);
+          let data;
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            data = await res.json();
+          } else {
+            data = await res.text();
+          }
+
+          // Store token if login
+          if (storeToken && data && data.token) {
+            setToken(data.token);
+          }
+
+          setResponse({ status: res.status, ok: res.ok, elapsed, data });
+        } catch (err) {
+          setResponse({ status: 0, ok: false, elapsed: 0, data: { error: err.message } });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const closeEndpointModal = () => {
+        setSelectedEndpoint(null);
+        setFormData({});
+        setResponse(null);
+      };
+
+      return (
+        <>
+          <header className="app-header">
+            <div className="container">
+              <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div>
+                  <h1><i className="bi bi-lightning-charge-fill"></i> API Tester</h1>
+                  <p>Gestão de Eventos • Clique em uma rota para testar</p>
+                </div>
+                <button className={`token-badge ${token ? 'has-token' : ''}`} onClick={openTokenModal}>
+                  <i className={`bi ${token ? 'bi-check-circle-fill' : 'bi-key'}`}></i>
+                  {token ? 'Token ativo' : 'Configurar Token'}
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main className="container pb-5">
+            {groups.map((group, gi) => (
+              <section key={group.name} className="fade-in" style={{ animationDelay: `${gi * 0.05}s` }}>
+                <div className="section-title">
+                  <h2>
+                    <i className={`bi ${groupIcons[group.name] || 'bi-folder'}`}></i>
+                    {group.name}
+                  </h2>
+                  <span className="count">{group.items.length} rotas</span>
+                </div>
+                <div className="cards-grid">
+                  {group.items.map((ep, i) => (
+                    <div
+                      key={ep.key}
+                      className="route-card fade-in"
+                      style={{ '--method-color': methodColors[ep.api.method], animationDelay: `${(gi * 0.05) + (i * 0.03)}s` }}
+                      onClick={() => handleCardClick(ep)}
+                    >
+                      <div className="card-header">
+                        <h3 className="title">{ep.title}</h3>
+                        <span className="method-badge" style={{ background: methodColors[ep.api.method] }}>
+                          {ep.api.method}
+                        </span>
+                      </div>
+                      <div className="path">{ep.api.path}</div>
+                      {ep.description && <p className="desc">{ep.description}</p>}
+                      {ep.api.auth && (
+                        <div className="jwt-tag">
+                          <i className="bi bi-shield-lock-fill"></i> Requer JWT
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </main>
+
+          {/* Token Modal */}
+          {showTokenModal && (
+            <div className="modal show d-block" tabIndex="-1" onClick={() => setShowTokenModal(false)}>
+              <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title"><i className="bi bi-key me-2"></i>Token JWT</h5>
+                    <button type="button" className="btn-close" onClick={() => setShowTokenModal(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                      Cole seu token JWT aqui ou faça login na rota <strong>Auth → Login</strong>.
+                    </p>
+                    <div className="token-input-group">
+                      <input
+                        type="text"
+                        className="form-control mono"
+                        placeholder="eyJhbGciOiJIUzI1NiIs..."
+                        value={tempToken}
+                        onChange={e => setTempToken(e.target.value)}
+                      />
+                      <button className="btn btn-accent" onClick={saveToken}>Salvar</button>
+                    </div>
+                    {token && (
+                      <button
+                        className="btn btn-ghost w-100 mt-3"
+                        onClick={() => { setToken(''); setTempToken(''); setShowTokenModal(false); }}
+                      >
+                        <i className="bi bi-trash me-2"></i>Limpar token
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Endpoint Modal */}
+          {selectedEndpoint && (
+            <div className="modal show d-block" tabIndex="-1" onClick={closeEndpointModal}>
+              <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" onClick={e => e.stopPropagation()}>
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">
+                      <span
+                        className="method-badge me-2"
+                        style={{ background: methodColors[selectedEndpoint.api.method] }}
+                      >
+                        {selectedEndpoint.api.method}
+                      </span>
+                      {selectedEndpoint.title}
+                    </h5>
+                    <button type="button" className="btn-close" onClick={closeEndpointModal}></button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="mb-3">
+                      <span className="mono" style={{ color: 'var(--text-muted)' }}>{selectedEndpoint.api.path}</span>
+                      {selectedEndpoint.api.auth && (
+                        <span className="jwt-tag ms-2">
+                          <i className="bi bi-shield-lock-fill"></i> JWT
+                        </span>
+                      )}
+                    </div>
+
+                    {selectedEndpoint.fields.length > 0 ? (
+                      <form onSubmit={e => { e.preventDefault(); handleSubmit(); }}>
+                        <div className="row g-3">
+                          {selectedEndpoint.fields.map(field => (
+                            <div key={field.name} className={field.type === 'textarea' ? 'col-12' : 'col-md-6'}>
+                              <label className="form-label">
+                                {field.label}
+                                {field.required && <span style={{ color: 'var(--delete)' }}> *</span>}
+                              </label>
+                              {field.type === 'textarea' ? (
+                                <textarea
+                                  className="form-control"
+                                  rows={3}
+                                  placeholder={field.placeholder || ''}
+                                  value={formData[field.name] || ''}
+                                  onChange={e => handleInputChange(field.name, e.target.value)}
+                                  required={field.required}
+                                />
+                              ) : (
+                                <input
+                                  type={field.type || 'text'}
+                                  className="form-control"
+                                  placeholder={field.placeholder || ''}
+                                  value={formData[field.name] || ''}
+                                  onChange={e => handleInputChange(field.name, e.target.value)}
+                                  required={field.required}
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </form>
+                    ) : (
+                      <p style={{ color: 'var(--text-muted)' }}>Esta rota não requer parâmetros.</p>
+                    )}
+
+                    {response && (
+                      <div className="mt-4">
+                        <hr style={{ borderColor: 'var(--border-color)' }} />
+                        <h6 className="mb-3">Resposta</h6>
+                        <div className="response-meta">
+                          <span className={`status ${response.ok ? 'success' : 'error'}`}>
+                            {response.status || 'Erro'}
+                          </span>
+                          <span className="time"><i className="bi bi-clock me-1"></i>{response.elapsed} ms</span>
+                        </div>
+                        <div className="response-box">
+                          {typeof response.data === 'object'
+                            ? JSON.stringify(response.data, null, 2)
+                            : response.data || '(vazio)'}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn btn-ghost" onClick={closeEndpointModal}>Fechar</button>
+                    <button className="btn btn-accent" onClick={handleSubmit} disabled={loading}>
+                      {loading ? (
+                        <><span className="spinner-border spinner-border-sm me-2"></span>Enviando...</>
+                      ) : (
+                        <><i className="bi bi-send me-2"></i>Enviar requisição</>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal backdrop */}
+          {(showTokenModal || selectedEndpoint) && <div className="modal-backdrop show"></div>}
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
+
