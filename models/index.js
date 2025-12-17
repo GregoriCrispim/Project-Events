@@ -4,20 +4,41 @@ const fs = require('fs');
 const path = require('path');
 const Sequelize = require('sequelize');
 const process = require('process');
+
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
 const config = require(__dirname + '/../config/config.json')[env];
 const db = {};
 
 let sequelize;
+
 if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+  // Ex: config.use_env_variable = "DATABASE_URL"
+  const connStr = process.env[config.use_env_variable];
+
+  // Falha explícita (melhor do que quebrar com erro interno do Sequelize)
+  if (!connStr || typeof connStr !== 'string' || connStr.trim() === '') {
+    throw new Error(`Missing env var: ${config.use_env_variable}`);
+  }
+
+  // Railway Postgres geralmente requer SSL
+  sequelize = new Sequelize(connStr, {
+    ...config,
+    dialect: 'postgres',
+    logging: false,
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
+    },
+  });
 } else {
+  // Desenvolvimento/local (usa config.json)
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
 
-fs
-  .readdirSync(__dirname)
+fs.readdirSync(__dirname)
   .filter(file => {
     return (
       file.indexOf('.') !== 0 &&
