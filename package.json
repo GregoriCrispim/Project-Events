@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "build": "npx sequelize-cli db:migrate",
-    "start": "node app.js",
+    "start": "npx sequelize-cli db:migrate && node app.js",
     "dev": "node app.js",
     "migrate": "npx sequelize-cli db:migrate",
     "seed": "npx sequelize-cli db:seed:all"
