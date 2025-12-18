@@ -12,7 +12,9 @@ module.exports = {
 
   async detalharParticipante(req, res) {
     try {
-      const participante = await Participante.findByPk(req.params.id);
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const participante = await Participante.findByPk(id);
       if (!participante) return res.status(404).json({ error: 'Participante não encontrado' });
       res.json(participante);
     } catch (err) {
@@ -31,7 +33,9 @@ module.exports = {
 
   async atualizarParticipante(req, res) {
     try {
-      const participante = await Participante.findByPk(req.params.id);
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const participante = await Participante.findByPk(id);
       if (!participante) return res.status(404).json({ error: 'Participante não encontrado' });
       await participante.update(req.body);
       res.json(participante);
@@ -42,7 +46,9 @@ module.exports = {
 
   async removerParticipante(req, res) {
     try {
-      const participante = await Participante.findByPk(req.params.id);
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const participante = await Participante.findByPk(id);
       if (!participante) return res.status(404).json({ error: 'Participante não encontrado' });
       await participante.destroy();
       res.status(204).send();

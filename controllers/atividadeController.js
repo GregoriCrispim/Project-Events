@@ -12,7 +12,9 @@ module.exports = {
 
   async detalharAtividade(req, res) {
     try {
-      const atividade = await Atividade.findByPk(req.params.id);
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const atividade = await Atividade.findByPk(id);
       if (!atividade) return res.status(404).json({ error: 'Atividade não encontrada' });
       res.json(atividade);
     } catch (err) {
@@ -31,7 +33,9 @@ module.exports = {
 
   async atualizarAtividade(req, res) {
     try {
-      const atividade = await Atividade.findByPk(req.params.id);
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const atividade = await Atividade.findByPk(id);
       if (!atividade) return res.status(404).json({ error: 'Atividade não encontrada' });
       await atividade.update(req.body);
       res.json(atividade);
@@ -42,7 +46,9 @@ module.exports = {
 
   async removerAtividade(req, res) {
     try {
-      const atividade = await Atividade.findByPk(req.params.id);
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const atividade = await Atividade.findByPk(id);
       if (!atividade) return res.status(404).json({ error: 'Atividade não encontrada' });
       await atividade.destroy();
       res.status(204).send();
@@ -53,7 +59,9 @@ module.exports = {
 
   async detalharResponsavel(req, res) {
     try {
-      const atividade = await Atividade.findByPk(req.params.id, {
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const atividade = await Atividade.findByPk(id, {
         include: [{ model: Participante, as: 'responsavel' }]
       });
       if (!atividade) return res.status(404).json({ error: 'Atividade não encontrada' });
@@ -65,7 +73,9 @@ module.exports = {
 
   async definirResponsavel(req, res) {
     try {
-      const atividade = await Atividade.findByPk(req.params.id);
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const atividade = await Atividade.findByPk(id);
       const participante = await Participante.findByPk(req.body.responsavelId);
       if (!atividade || !participante) return res.status(404).json({ error: 'Atividade ou participante não encontrado' });
       atividade.ResponsavelId = participante.id;

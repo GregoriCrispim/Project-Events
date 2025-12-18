@@ -12,7 +12,9 @@ module.exports = {
 
   async detalharEvento(req, res) {
     try {
-      const evento = await Evento.findByPk(req.params.id);
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const evento = await Evento.findByPk(id);
       if (!evento) return res.status(404).json({ error: 'Evento não encontrado' });
       res.json(evento);
     } catch (err) {
@@ -31,7 +33,9 @@ module.exports = {
 
   async atualizarEvento(req, res) {
     try {
-      const evento = await Evento.findByPk(req.params.id);
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const evento = await Evento.findByPk(id);
       if (!evento) return res.status(404).json({ error: 'Evento não encontrado' });
       await evento.update(req.body);
       res.json(evento);
@@ -42,7 +46,9 @@ module.exports = {
 
   async removerEvento(req, res) {
     try {
-      const evento = await Evento.findByPk(req.params.id);
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const evento = await Evento.findByPk(id);
       if (!evento) return res.status(404).json({ error: 'Evento não encontrado' });
       await evento.destroy();
       res.status(204).send();
@@ -53,7 +59,9 @@ module.exports = {
 
   async listarAtividadesDoEvento(req, res) {
     try {
-      const atividades = await Atividade.findAll({ where: { EventoId: req.params.id } });
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const atividades = await Atividade.findAll({ where: { EventoId: id } });
       res.json(atividades);
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -62,7 +70,9 @@ module.exports = {
 
   async criarAtividadeNoEvento(req, res) {
     try {
-      const evento = await Evento.findByPk(req.params.id);
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const evento = await Evento.findByPk(id);
       if (!evento) return res.status(404).json({ error: 'Evento não encontrado' });
       const atividade = await Atividade.create({ ...req.body, EventoId: evento.id });
       res.status(201).json(atividade);
@@ -73,7 +83,9 @@ module.exports = {
 
   async listarParticipantesDoEvento(req, res) {
     try {
-      const evento = await Evento.findByPk(req.params.id, {
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const evento = await Evento.findByPk(id, {
         include: [{ model: Participante, through: { attributes: [] } }]
       });
       if (!evento) return res.status(404).json({ error: 'Evento não encontrado' });
@@ -85,7 +97,9 @@ module.exports = {
 
   async inscreverParticipanteNoEvento(req, res) {
     try {
-      const evento = await Evento.findByPk(req.params.id);
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const evento = await Evento.findByPk(id);
       const participante = await Participante.findByPk(req.body.participanteId);
       if (!evento || !participante) return res.status(404).json({ error: 'Evento ou participante não encontrado' });
       await evento.addParticipante(participante);
@@ -97,7 +111,9 @@ module.exports = {
 
   async dashboardEvento(req, res) {
     try {
-      const evento = await Evento.findByPk(req.params.id, {
+      const id = Number(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+      const evento = await Evento.findByPk(id, {
         include: [
           {
             model: Atividade,
